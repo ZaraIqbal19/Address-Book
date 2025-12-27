@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customers;
-use App\Models\Orders;
-use App\Models\Products;
+use App\Models\Product;
+use App\Models\Customer;
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\order_item;
+use App\Models\cart;
+use App\Models\Cart_item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
+
+use function Laravel\Prompts\clear;
 
 class AdminController extends Controller
 {
@@ -16,7 +22,7 @@ class AdminController extends Controller
     | ADMIN DASHBOARD
     |--------------------------------------------------------------------------
     */
-    public function dashboard()
+    public function admindashboard()
     {
         $totalProducts = DB::table('products')->count();
         $totalCategories = DB::table('categories')->count();
@@ -117,9 +123,9 @@ class AdminController extends Controller
     public function admin()
     {
         return view('admin.dashboard', [
-            'products'  => Products::count(),
-            'orders'    => Orders::count(),
-            'customers' => Customers::count()
+            'products'  => Product::count(),
+            'orders'    => Order::count(),
+            'customers' => Customer::count()
         ]);
     }
 
@@ -130,9 +136,7 @@ class AdminController extends Controller
     */
     public function orders()
     {
-        $orders = Orders::with('customer')
-            ->latest()
-            ->get();
+        $orders = Order::with('customer')->latest()->get();
 
         return view('admin.orders.index', compact('orders'));
     }
@@ -144,7 +148,7 @@ class AdminController extends Controller
     */
     public function orderDetails($id)
     {
-        $order = orders::with(['customer','items.product'])
+        $order = order::with(['customer','items.product'])
             ->findOrFail($id);
 
         return view('admin.orders.details', compact('order'));
@@ -157,7 +161,7 @@ class AdminController extends Controller
     */
     public function deleteOrder($id)
     {
-        Orders::findOrFail($id)->delete();
+        Order::findOrFail($id)->delete();
         return back()->with('success','Order deleted successfully');
     }
 
@@ -168,7 +172,7 @@ class AdminController extends Controller
     */
     public function customers()
     {
-        $customers = Customers::latest()->get();
+        $customers = Customer::latest()->get();
         return view('admin.customers.index', compact('customers'));
     }
 
@@ -179,9 +183,279 @@ class AdminController extends Controller
     */
     public function deleteCustomer($id)
     {
-        Customers::findOrFail($id)->delete();
+        Customer::findOrFail($id)->delete();
         return back()->with('success','Customer deleted successfully');
     }
-}
 
+
+
+
+
+// category
+ /*
+    |--------------------------------------------------------------------------
+    | ADMIN – LIST ALL CATEGORIES
+    |--------------------------------------------------------------------------
+    */
+    public function ShowCatogries()
+    {
+        $categories = Category::latest()->get();
+        return view('admin.categories.index', compact('categories'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN – SHOW CREATE FORM
+    |--------------------------------------------------------------------------
+    */
+    // // i have to create the route of this function
+    // public function createcatogry()
+    // {
+    //     return view('admin.categories.create');
+    // }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN – STORE CATEGORY
+    |--------------------------------------------------------------------------
+    */
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'name' => 'required|unique:categories,name'
+    //     ]);
+
+    //     Categories::create([
+    //         'name' => $request->name
+    //     ]);
+
+    //     return redirect()->route('categories.index')
+    //         ->with('success', 'Category added successfully');
+    // }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN – SHOW EDIT FORM
+    |--------------------------------------------------------------------------
+    */
+    // public function edit($id)
+    // {
+    //     $category = Categories::findOrFail($id);
+    //     return view('admin.categories.edit', compact('category'));
+    // }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN – UPDATE CATEGORY
+    |--------------------------------------------------------------------------
+    */
+    // public function update(Request $request, $id)
+    // {
+    //     $category = Categories::findOrFail($id);
+
+    //     $request->validate([
+    //         'name' => 'required|unique:categories,name,' . $category->id
+    //     ]);
+
+    //     $category->update([
+    //         'name' => $request->name
+    //     ]);
+
+    //     return redirect()->route('categories.index')
+    //         ->with('success', 'Category updated successfully');
+    // }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN – DELETE CATEGORY
+    |--------------------------------------------------------------------------
+    */
+    // public function destroy($id)
+    // {
+    //     Categories::findOrFail($id)->delete();
+
+    //     return redirect()->route('categories.index')
+    //         ->with('success', 'Category deleted successfully');
+    // }
+
+
+// Home Controller
+
+public function showlatestproducts()
+    {
+        $categories = Category::orderBy('name')->get();
+
+        $products = Product::with('category')
+            ->latest()
+            ->take(8)   // show latest 8 products on home
+            ->get();
+
+        return view('user.home', compact('categories', 'products'));
+    }
+
+    // product controller
+     /*
+    |--------------------------------------------------------------------------
+    | USER SIDE – LIST PRODUCTS
+    |--------------------------------------------------------------------------
+    */
+    // public function index(Request $request)
+    // {
+    //     $query = Products::with('category');
+
+    //     // Filter by category (optional)
+    //     if ($request->has('category')) {
+    //         $query->where('category_id', $request->category);
+    //     }
+
+    //     $products = $query->paginate(12);
+
+    //     return view('user.products', compact('products'));
+    // }
+
+    // /*
+    // |--------------------------------------------------------------------------
+    // | USER SIDE – VIEW SINGLE PRODUCT
+    // |--------------------------------------------------------------------------
+    // */
+    // public function show($id)
+    // {
+    //     $product = Products::with('category')->findOrFail($id);
+    //     return view('user.product-details', compact('product'));
+    // }
+
+    // /*
+    // |--------------------------------------------------------------------------
+    // | USER SIDE – SEARCH PRODUCT
+    // |--------------------------------------------------------------------------
+    // */
+    // public function search(Request $request)
+    // {
+    //     $request->validate([
+    //         'search' => 'required|string'
+    //     ]);
+
+    //     $products = Products::where('name', 'LIKE', '%'.$request->search.'%')
+    //         ->paginate(12);
+
+    //     return view('user.products', compact('products'));
+    // }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN SIDE – CREATE PRODUCT FORM
+    |--------------------------------------------------------------------------
+    */
+    public function create()
+    {
+        $categories = Category::all();
+        return view('admin.products.create', compact('categories'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN SIDE – STORE PRODUCT
+    |--------------------------------------------------------------------------
+    */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name'        => 'required',
+            'price'       => 'required|numeric',
+            'stock'       => 'required|integer',
+            'category_id' => 'required',
+            'image'       => 'required|image'
+        ]);
+
+        $imageName = time().'.'.$request->image->extension();
+        $request->image->move(public_path('uploads/products'), $imageName);
+
+        Product::create([
+            'name'        => $request->name,
+            'description' => $request->description,
+            'price'       => $request->price,
+            'stock'       => $request->stock,
+            'category_id' => $request->category_id,
+            'image'       => 'uploads/products/'.$imageName
+        ]);
+
+        return redirect()->route('products.index')
+            ->with('success','Product added successfully');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN SIDE – EDIT PRODUCT FORM
+    |--------------------------------------------------------------------------
+    */
+    public function edit($id)
+    {
+        $product = Product::findOrFail($id);
+        $categories = Category::all();
+
+        return view('admin.products.edit', compact('product','categories'));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN SIDE – UPDATE PRODUCT
+    |--------------------------------------------------------------------------
+    */
+    public function update(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+
+        $request->validate([
+            'name'        => 'required',
+            'price'       => 'required|numeric',
+            'stock'       => 'required|integer',
+            'category_id' => 'required',
+            'image'       => 'nullable|image'
+        ]);
+
+        if ($request->hasFile('image')) {
+            $imageName = time().'.'.$request->image->extension();
+            $request->image->move(public_path('uploads/products'), $imageName);
+            $product->image = 'uploads/products/'.$imageName;
+        }
+
+        $product->update([
+            'name'        => $request->name,
+            'description' => $request->description,
+            'price'       => $request->price,
+            'stock'       => $request->stock,
+            'category_id' => $request->category_id
+        ]);
+
+        return redirect()->route('products.index')
+            ->with('success','Product updated successfully');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN SIDE – DELETE PRODUCT
+    |--------------------------------------------------------------------------
+    */
+    public function destroy($id)
+    {
+        Product::findOrFail($id)->delete();
+
+        return redirect()->route('products.index')
+            ->with('success','Product deleted successfully');
+    }
+
+    public function addcategory(Request $req)
+    {
+        $categoryname = $req->categoryname;
+        $table = new Category();
+        $table->categoryname = $categoryname;
+        $table->save();
+        return redirect()->back()->with('Message','Category has been added');
+    }
+
+
+    
+
+
+}
 
