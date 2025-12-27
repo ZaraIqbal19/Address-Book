@@ -1,14 +1,8 @@
 <?php
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\{
-    HomeController,
-    ProductController,
-    CategoryController,
-    CartController,
-    OrderController,
-    AdminController
-};
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,25 +10,25 @@ use App\Http\Controllers\{
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+// Route::get('/', [AdminController::class, 'showlatestproducts'])->name('home');
 
 // Product Browsing
-Route::get('/products', [ProductController::class, 'index'])->name('products');
-Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/products', [AdminController::class, 'index'])->name('products');
+Route::get('/product/{id}', [AdminController::class, 'show'])->name('product.show');
 
 // Search
-Route::get('/search', [ProductController::class, 'search'])->name('product.search');
+Route::get('/search', [AdminController::class, 'search'])->name('product.search');
 
 // Cart
-Route::post('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add');
-Route::get('/cart', [CartController::class, 'index'])->name('cart');
-Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
-Route::get('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/add/{id}', [UserController::class, 'add'])->name('cart.add');
+Route::get('/cart', [UserController::class, 'index'])->name('cart');
+Route::post('/cart/update/{id}', [UserController::class, 'update'])->name('cart.update');
+Route::get('/cart/remove/{id}', [UserController::class, 'remove'])->name('cart.remove');
 
 // Checkout & Orders
-Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
-Route::post('/order/place', [OrderController::class, 'store'])->name('order.place');
-Route::get('/order/success', [OrderController::class, 'success'])->name('order.success');
+Route::get('/checkout', [UserController::class, 'checkout'])->name('checkout');
+Route::post('/order/place', [UserController::class, 'store'])->name('order.place');
+Route::get('/order/success', [UserController::class, 'success'])->name('order.success');
 
 /*
 |--------------------------------------------------------------------------
@@ -52,13 +46,13 @@ Route::get('/order/success', [OrderController::class, 'success'])->name('order.s
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admindashboard', [AdminController::class, 'admindashboard'])->name('admin.admindashboard');
 
     // Category Management
-    Route::resource('/categories', CategoryController::class);
+    // Route::resource('/categories', AdminController::class,'ShowCatogries');
 
     // Product Management
-    Route::resource('/products', ProductController::class);
+    Route::resource('/products', AdminController::class);
 
     // Database Maintenance
     Route::get('/database', [AdminController::class, 'database'])->name('admin.database');
@@ -87,9 +81,23 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
 });
 
-Route::get('/', function () {
-    return view('index');
+
+
+Route::get('/home', function () {
+    return view('User.index');
 });
+
+
+Route::get('/uploadcategory',function(){
+    return view('admin.productcategory');
+    });
+    Route::get('/uploadproduct',[AdminController::class,('fetchcategory')]);
+    Route::post('/addcategory',[AdminController::class,('addcategory')]);
+    Route::post('/insertproduct',[AdminController::class,('uploadproduct')]);
+    Route::get('/fetchproduct',[AdminController::class,('fetchproducts')]);
+    Route::post('/addtocart',[AdminController::class,('addtocart')]);
+
+
 
 
 
