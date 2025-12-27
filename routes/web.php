@@ -98,7 +98,7 @@ Route::get('/uploadcategory',function(){
     Route::post('/addtocart',[AdminController::class,('addtocart')]);
 
 
-
+6
 
 
 Route::get('/dashboard', function () {
